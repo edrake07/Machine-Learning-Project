@@ -1,0 +1,60 @@
+---
+title: "Practical Machine Learning Project.Rmd"
+author: "Evan Drake"
+date: "4/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prediction using Cross Validation
+
+Using the workout dataset I will train a series of tree and random forest models. Each training run will use a different number of k folds to determine the optimal number for prediction.
+
+## Data
+
+The workout data is organized into a training and test set. To train the model I will split the training data set further into a training and testing set and leave the original test set aside for validation. 
+
+## Feature Selection
+
+I based on the description of the data 96 features were created during the study to summarize the sensor data. The study authors split the data into various window sizes, from 0.5 seconds up to 2 seconds, then summarized. These summary statistics are only reported on rows of data with the tag "new window". Given that the predictions must be made on a small set of validation data that does include of any of these statistics I will drop them from my data and make predictions using only the raw input from the sensors. 
+
+```{r }
+testing <- readRDS("testing.RDS")
+names(testing)
+```
+
+## Creating the testing and training data sets
+
+To train the model I will subset the training data set further into a training and testing data set
+
+
+## Model training runs
+
+I will run two sets of models, tree, and random forest. For validation I will also use zero, 2, 5, and 10 k folds for cross validation. 
+
+## Calcuate accuracy of model runs
+
+Model accuracy calculated using the percent of observations that are properly predicted in the testing data set.
+
+
+```{r }
+source("6_Test Accuracy.R")
+
+accuracy
+
+g <- ggplot(data=accuracy, aes(x=run, y=accuracy, fill=model)) + geom_bar(stat="identity") + geom_text(aes(label=round(accuracy,4)), angle = 90, position = position_stack(vjust = 0.5))
+g + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_x_discrete(limits=c(run_names))
+        
+
+```
+
+## Model Selection
+
+Given the previous results, I will select the random forest model with 5 k folds. The results from predicting on the validation data set are below
+
+```{r }
+pred_final
+```
