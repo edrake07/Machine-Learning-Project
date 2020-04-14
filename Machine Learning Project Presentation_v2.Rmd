@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+
 ```
 
 ## Prediction using Cross Validation
@@ -41,7 +44,51 @@ Model accuracy calculated using the percent of observations that are properly pr
 
 
 ```{r }
-source("6_Test Accuracy.R")
+
+modFit_tree_none <- readRDS("modFit_tree_none.RDS")
+modFit_tree_cv2 <- readRDS("modFit_tree_cv2.RDS")
+modFit_tree_cv5 <- readRDS("modFit_tree_cv5.RDS")
+modFit_tree_cv10 <- readRDS("modFit_tree_cv10.RDS")
+modFit_rf_none <- readRDS("modFit_rf_none.RDS")
+modFit_rf_cv2 <- readRDS("modFit_rf_cv2.RDS")
+modFit_rf_cv5 <- readRDS("modFit_rf_cv5.RDS")
+modFit_rf_cv10 <- readRDS("modFit_rf_cv10.RDS")
+
+## Test model accuracy and predict
+
+# predict with tree models
+pred_tree_none <- predict(modFit_tree_none, testing)
+pred_tree_cv2 <- predict(modFit_tree_cv2, testing)
+pred_tree_cv5 <- predict(modFit_tree_cv5, testing)
+pred_tree_cv10 <- predict(modFit_tree_cv10, testing)
+
+# predict with random forest models
+pred_rf_none <- predict(modFit_rf_none, testing)
+pred_rf_cv2 <- predict(modFit_rf_cv2, testing)
+pred_rf_cv5 <- predict(modFit_rf_cv5, testing)
+pred_rf_cv10 <- predict(modFit_rf_cv10, testing)
+
+# cacluate prediction accuracy on testing data set
+accuracy_tree_none <- sum(pred_tree_none == testing$classe) / nrow(testing)
+accuracy_tree_cv2 <- sum(pred_tree_cv2 == testing$classe) / nrow(testing)
+accuracy_tree_cv5 <- sum(pred_tree_cv5 == testing$classe) / nrow(testing)
+accuracy_tree_cv10 <- sum(pred_tree_cv10 == testing$classe) / nrow(testing)
+
+accuracy_rf_none <- sum(pred_rf_none == testing$classe) / nrow(testing)
+accuracy_rf_cv2 <- sum(pred_rf_cv2 == testing$classe) / nrow(testing)
+accuracy_rf_cv5 <- sum(pred_rf_cv5 == testing$classe) / nrow(testing)
+accuracy_rf_cv10 <- sum(pred_rf_cv10 == testing$classe) / nrow(testing)
+
+accuracy_nums <- c(accuracy_tree_none, accuracy_tree_cv2, accuracy_tree_cv5, accuracy_tree_cv10,
+                   accuracy_rf_none, accuracy_rf_cv2, accuracy_rf_cv5, accuracy_rf_cv10)
+
+run_names <- c("tree_none", "tree_cv2", "tree_cv5", "tree_cv10", "rf_none", "rf_cv2", "rf_cv5", "rf_cv10")
+
+accuracy <- as.data.frame(cbind(run_names, accuracy_nums))
+accuracy$model <- c("tree", "tree", "tree", "tree", "rf", "rf", "rf", "rf")
+names(accuracy) <- c("run", "accuracy", "model")
+accuracy$accuracy <- as.numeric(as.character(accuracy$accuracy))
+
 
 accuracy
 
@@ -56,5 +103,21 @@ g + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_x_discrete(
 Given the previous results, I will select the random forest model with 5 k folds. The results from predicting on the validation data set are below
 
 ```{r }
+
+# Final Prediction Using Validation Data Set
+
+validation <- readRDS("validation.RDS")
+training <- readRDS("training.RDS")
+
+# select relevant columns of the validation data set
+final_cols <- names(training)
+strMatch <- final_cols
+strMatch <- paste0("^", strMatch, "$", collapse="|")
+final_cols_index <- grep(strMatch, names(validation))
+validation_final <- validation[,final_cols_index]
+
+# perform prediction on the validation data set
+pred_final <- predict(modFit_rf_cv5, validation_final)
+
 pred_final
 ```

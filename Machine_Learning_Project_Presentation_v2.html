@@ -130,7 +130,7 @@ $(document).ready(function () {
 
 <div id="prediction-using-cross-validation" class="section level2">
 <h2>Prediction using Cross Validation</h2>
-<p>Using the workout dataset I will train a series of tree, random forest, and naive bayesian models. Each training run will use a different number of k folds to determine the optimal number for prediction.</p>
+<p>Using the workout dataset I will train a series of tree and random forest models. Each training run will use a different number of k folds to determine the optimal number for prediction.</p>
 </div>
 <div id="data" class="section level2">
 <h2>Data</h2>
@@ -171,7 +171,50 @@ names(testing)</code></pre>
 <div id="calcuate-accuracy-of-model-runs" class="section level2">
 <h2>Calcuate accuracy of model runs</h2>
 <p>Model accuracy calculated using the percent of observations that are properly predicted in the testing data set.</p>
-<pre class="r"><code>source(&quot;6_Test Accuracy.R&quot;)
+<pre class="r"><code>modFit_tree_none &lt;- readRDS(&quot;modFit_tree_none.RDS&quot;)
+modFit_tree_cv2 &lt;- readRDS(&quot;modFit_tree_cv2.RDS&quot;)
+modFit_tree_cv5 &lt;- readRDS(&quot;modFit_tree_cv5.RDS&quot;)
+modFit_tree_cv10 &lt;- readRDS(&quot;modFit_tree_cv10.RDS&quot;)
+modFit_rf_none &lt;- readRDS(&quot;modFit_rf_none.RDS&quot;)
+modFit_rf_cv2 &lt;- readRDS(&quot;modFit_rf_cv2.RDS&quot;)
+modFit_rf_cv5 &lt;- readRDS(&quot;modFit_rf_cv5.RDS&quot;)
+modFit_rf_cv10 &lt;- readRDS(&quot;modFit_rf_cv10.RDS&quot;)
+
+## Test model accuracy and predict
+
+# predict with tree models
+pred_tree_none &lt;- predict(modFit_tree_none, testing)
+pred_tree_cv2 &lt;- predict(modFit_tree_cv2, testing)
+pred_tree_cv5 &lt;- predict(modFit_tree_cv5, testing)
+pred_tree_cv10 &lt;- predict(modFit_tree_cv10, testing)
+
+# predict with random forest models
+pred_rf_none &lt;- predict(modFit_rf_none, testing)
+pred_rf_cv2 &lt;- predict(modFit_rf_cv2, testing)
+pred_rf_cv5 &lt;- predict(modFit_rf_cv5, testing)
+pred_rf_cv10 &lt;- predict(modFit_rf_cv10, testing)
+
+# cacluate prediction accuracy on testing data set
+accuracy_tree_none &lt;- sum(pred_tree_none == testing$classe) / nrow(testing)
+accuracy_tree_cv2 &lt;- sum(pred_tree_cv2 == testing$classe) / nrow(testing)
+accuracy_tree_cv5 &lt;- sum(pred_tree_cv5 == testing$classe) / nrow(testing)
+accuracy_tree_cv10 &lt;- sum(pred_tree_cv10 == testing$classe) / nrow(testing)
+
+accuracy_rf_none &lt;- sum(pred_rf_none == testing$classe) / nrow(testing)
+accuracy_rf_cv2 &lt;- sum(pred_rf_cv2 == testing$classe) / nrow(testing)
+accuracy_rf_cv5 &lt;- sum(pred_rf_cv5 == testing$classe) / nrow(testing)
+accuracy_rf_cv10 &lt;- sum(pred_rf_cv10 == testing$classe) / nrow(testing)
+
+accuracy_nums &lt;- c(accuracy_tree_none, accuracy_tree_cv2, accuracy_tree_cv5, accuracy_tree_cv10,
+                   accuracy_rf_none, accuracy_rf_cv2, accuracy_rf_cv5, accuracy_rf_cv10)
+
+run_names &lt;- c(&quot;tree_none&quot;, &quot;tree_cv2&quot;, &quot;tree_cv5&quot;, &quot;tree_cv10&quot;, &quot;rf_none&quot;, &quot;rf_cv2&quot;, &quot;rf_cv5&quot;, &quot;rf_cv10&quot;)
+
+accuracy &lt;- as.data.frame(cbind(run_names, accuracy_nums))
+accuracy$model &lt;- c(&quot;tree&quot;, &quot;tree&quot;, &quot;tree&quot;, &quot;tree&quot;, &quot;rf&quot;, &quot;rf&quot;, &quot;rf&quot;, &quot;rf&quot;)
+names(accuracy) &lt;- c(&quot;run&quot;, &quot;accuracy&quot;, &quot;model&quot;)
+accuracy$accuracy &lt;- as.numeric(as.character(accuracy$accuracy))
+
 
 accuracy</code></pre>
 <pre><code>##         run  accuracy model
@@ -190,7 +233,22 @@ g + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_x_discrete(
 <div id="model-selection" class="section level2">
 <h2>Model Selection</h2>
 <p>Given the previous results, I will select the random forest model with 5 k folds. The results from predicting on the validation data set are below</p>
-<pre class="r"><code>pred_final</code></pre>
+<pre class="r"><code># Final Prediction Using Validation Data Set
+
+validation &lt;- readRDS(&quot;validation.RDS&quot;)
+training &lt;- readRDS(&quot;training.RDS&quot;)
+
+# select relevant columns of the validation data set
+final_cols &lt;- names(training)
+strMatch &lt;- final_cols
+strMatch &lt;- paste0(&quot;^&quot;, strMatch, &quot;$&quot;, collapse=&quot;|&quot;)
+final_cols_index &lt;- grep(strMatch, names(validation))
+validation_final &lt;- validation[,final_cols_index]
+
+# perform prediction on the validation data set
+pred_final &lt;- predict(modFit_rf_cv5, validation_final)
+
+pred_final</code></pre>
 <pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
 ## Levels: A B C D E</code></pre>
 </div>
